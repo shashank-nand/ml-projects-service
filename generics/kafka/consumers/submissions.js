@@ -25,7 +25,7 @@ var messageReceived = function (message) {
     try {
       
       let parsedMessage = JSON.parse(message.value);
-
+      console.log(parsedMessage ,"messageReceived from kafka")
       let submissionDocument = {
         "_id" : parsedMessage._id.toString(),
         "status" : parsedMessage.status,
@@ -59,6 +59,7 @@ var errorTriggered = function (error) {
   return new Promise(function (resolve, reject) {
 
     try {
+      console.log(error ,"errorTriggered from kafka")
       return resolve(error);
     } catch (error) {
       return reject(error);
