@@ -21,6 +21,8 @@ module.exports = {
     "COMPLETED_STATUS" : "completed",
     "INPROGRESS_STATUS" : "inProgress",
     "NOT_STARTED_STATUS" : "notStarted",
+    "STARTED":"started",
+    "SUBMITTED_STATUS":"submitted",
     "OBSERVATION" : "observation",
     "PUBLISHED_STATUS" : "published",
     "LEAD_ASSESSOR" : "LEAD_ASSESSOR",
@@ -35,6 +37,12 @@ module.exports = {
     "OBSERVATION_REFERENCE_KEY" : "observation",
     "ALLOW_MULTIPLE_ASSESSMENTS" :  "allowMultipleAssessemts",
     "IS_RUBRIC_DRIVEN" :  "isRubricDriven",
-    "CRITERIA_LEVEL_REPORT" :  "criteriaLevelReport"
-
+    "CRITERIA_LEVEL_REPORT" :  "criteriaLevelReport",
+    "LINK" : "link",
+    "DEFAULT_SUBMISSION_REQUIRED" : 1,
+    "TASK_SEQUENCE" : "taskSequence",
+    "CHILDREN" : "children",
+    "ATTACHMENT_TYPE_LINK" : "link",
+    "PROJECT_ATTACHMENT" : "project",
+    "TASK_ATTACHMENT" : "task"
 };

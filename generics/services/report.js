@@ -1,5 +1,5 @@
 /**
- * name : dhiti.js
+ * name : report.js
  * author : Rakesh Kumar
  * Date : 10-Nov-2020
  * Description : All dhiti service related information.
@@ -30,7 +30,7 @@ const viewFullReport = function (token,input) {
                 headers : {
                     "internal-access-token": process.env.INTERNAL_ACCESS_TOKEN,
                     "content-type": "application/json",
-                    "x-auth-token": token
+                    "x-authenticated-user-token": token
                 },
                 json : input
             };
@@ -76,7 +76,7 @@ const entityReport = function (token,input) {
               headers : {
                   "internal-access-token": process.env.INTERNAL_ACCESS_TOKEN,
                   "content-type": "application/json",
-                  "x-auth-token": token
+                  "x-authenticated-user-token": token
               },
               json : input
           };
@@ -118,12 +118,14 @@ const projectAndTaskReport = function (token, input, projectPdf) {
             const url =  
             reportsUrl + 
             CONSTANTS.endpoints.PROJECT_AND_TASK_REPORT + "?projectPdf=" + projectPdf;
+
+            console.log("--- url is- ----",url);
           
             let options = {
                 headers : {
                     "internal-access-token": process.env.INTERNAL_ACCESS_TOKEN,
                     "content-type": "application/json",
-                    "x-auth-token": token
+                    "x-authenticated-user-token": token
                 },
                 json : input
             };
@@ -145,6 +147,7 @@ const projectAndTaskReport = function (token, input, projectPdf) {
             }
 
         } catch (error) {
+            console.log("catch error",error);
             return reject(error);
         }
     })

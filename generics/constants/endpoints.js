@@ -22,7 +22,6 @@ module.exports = {
     USER_PRIVATE_PROGRAMS : "/v1/users/privatePrograms",
     UPDATE_SOLUTIONS : "/v1/solutions/updateSolutions",
     LIST_PROGRAMS : "/v1/programs/list",
-    GET_USER_ORGANISATIONS : "/v1/users/getUserOrganisationsAndRootOrganisations",
     PRESIGNED_GCP_URL : "/v1/cloud-services/gcp/preSignedUrls", // Kendra service
     PRESIGNED_AWS_URL : "/v1/cloud-services/aws/preSignedUrls", // Kendra service
     PRESIGNED_AZURE_URL : "/v1/cloud-services/azure/preSignedUrls", // Kendra service,
@@ -44,5 +43,6 @@ module.exports = {
     SOLUTION_DETAILS_BASED_ON_ROLE_LOCATION : "/v1/solutions/detailsBasedOnRoleAndLocation",
     LIST_ENTITIES_BY_LOCATION_IDS : "/v1/entities/listByLocationIds",
     CREATE_IMPROVEMENT_PROJECT_SOLUTION : "/v1/solutions/create",
-    PROJECT_AND_TASK_REPORT : "/v1/improvement-project/projectAndTaskReport"
+    PROJECT_AND_TASK_REPORT : "/v1/improvement-project/projectAndTaskReport",
+    FILES_DOWNLOADABLE_URL: "/v1/cloud-services/files/getDownloadableUrl"
 };

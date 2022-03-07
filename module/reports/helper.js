@@ -8,7 +8,8 @@
 // Dependencies
 
 const userProjectsHelper = require(MODULES_BASE_PATH + "/userProjects/helper");
-const dhitiService = require(GENERICS_FILES_PATH + "/services/dhiti");
+const reportService = require(GENERICS_FILES_PATH + "/services/report");
+const projectQueries = require(DB_QUERY_BASE_PATH + "/projects");
 const moment = require('moment');
 
 
@@ -33,7 +34,7 @@ module.exports = class ReportsHelper {
     * @param {Boolean} getPdf - pdf true or false
     * @returns {Object} Entity report.
    */
-    static entity(entityId = "", userId, userToken, userName, reportType, programId = "", getPdf) {
+    static entity(entityId = "", userId, userToken, userName, reportType, programId = "", getPdf,appVersion) {
         return new Promise(async (resolve, reject) => {
             try {
 
@@ -64,7 +65,7 @@ module.exports = class ReportsHelper {
                     { "tasks": { $elemMatch: { isDeleted: { $ne: true },syncedAt: { $gte: new Date(startFrom), $lte: new Date(endOf) } } } },
                 ]
 
-                const projectDetails = await userProjectsHelper.projectDocument(
+                const projectDetails = await projectQueries.projectDocument(
                     query,
                     ["programId","programInformation.name", "entityInformation.name", "taskReport", "status", "tasks", "categories"],
                     []
@@ -87,9 +88,9 @@ module.exports = class ReportsHelper {
                     "total": 0,
                     "overdue": 0,
                 };
-                projectReport[CONSTANTS.common.COMPLETED_STATUS] = 0;
+                projectReport[CONSTANTS.common.SUBMITTED_STATUS] = 0;
                 projectReport[CONSTANTS.common.INPROGRESS_STATUS] = 0;
-                projectReport[CONSTANTS.common.NOT_STARTED_STATUS] = 0;
+                projectReport[CONSTANTS.common.STARTED] = 0;
 
 
                 let types = await this.types();
@@ -99,8 +100,12 @@ module.exports = class ReportsHelper {
                     }
                 });
 
+
+
+
                 if (!projectDetails.length > 0) {
 
+                  
                     if (getPdf == true) {
 
                         let reportTaskData = {};
@@ -122,8 +127,8 @@ module.exports = class ReportsHelper {
                             projects: projectReport,
 
                         }
-
-                        let response = await dhitiService.entityReport(userToken, pdfRequest);
+                        
+                        let response = await reportService.entityReport(userToken, pdfRequest);
 
                         if (response && response.success == true) {
 
@@ -145,6 +150,8 @@ module.exports = class ReportsHelper {
                         }
 
                     } else {
+
+                        
                         return resolve({
                             message: CONSTANTS.apiResponses.REPORTS_DATA_NOT_FOUND,
                             data: {
@@ -184,9 +191,10 @@ module.exports = class ReportsHelper {
 
                     let todayDate = moment(project.endDate, "DD.MM.YYYY");
                     let endDate = moment().format();
-                    if (project.status == CONSTANTS.common.COMPLETED_STATUS) {
 
-                        projectReport[CONSTANTS.common.COMPLETED_STATUS] = projectReport[CONSTANTS.common.COMPLETED_STATUS] + 1;
+                    if (project.status == CONSTANTS.common.SUBMITTED_STATUS) {
+
+                        projectReport[CONSTANTS.common.SUBMITTED_STATUS] = projectReport[CONSTANTS.common.SUBMITTED_STATUS] + 1;
 
                     } else if (project.status == CONSTANTS.common.INPROGRESS_STATUS) {
 
@@ -196,17 +204,17 @@ module.exports = class ReportsHelper {
                             projectReport[CONSTANTS.common.INPROGRESS_STATUS] = projectReport[CONSTANTS.common.INPROGRESS_STATUS] + 1;
                         }
 
-                    } else if (project.status == CONSTANTS.common.NOT_STARTED_STATUS) {
+                    } else if (project.status == CONSTANTS.common.STARTED) {
 
                         if (todayDate.diff(endDate, 'days') < 1) {
                             projectReport['overdue'] = projectReport['overdue'] + 1;
                         } else {
-                            projectReport[CONSTANTS.common.NOT_STARTED_STATUS] = projectReport[CONSTANTS.common.NOT_STARTED_STATUS] + 1;
+                            projectReport[CONSTANTS.common.STARTED] = projectReport[CONSTANTS.common.STARTED] + 1;
                         }
                     }
-                    projectReport["total"] = projectReport[CONSTANTS.common.NOT_STARTED_STATUS] + 
+                    projectReport["total"] = projectReport[CONSTANTS.common.STARTED] + 
                     projectReport['overdue'] + projectReport[CONSTANTS.common.INPROGRESS_STATUS] +
-                    projectReport[CONSTANTS.common.COMPLETED_STATUS];
+                    projectReport[CONSTANTS.common.SUBMITTED_STATUS];
 
                     if (project.taskReport) {
                         let keys = Object.keys(project.taskReport);
@@ -235,8 +243,16 @@ module.exports = class ReportsHelper {
 
                 }));
 
-                if (getPdf == true) {
+                if (UTILS.revertStatusorNot(appVersion)) {
 
+                    projectReport[CONSTANTS.common.COMPLETED_STATUS] = projectReport[CONSTANTS.common.SUBMITTED_STATUS];
+                    projectReport[CONSTANTS.common.NOT_STARTED_STATUS] = projectReport[CONSTANTS.common.STARTED];
+                    delete projectReport[CONSTANTS.common.SUBMITTED_STATUS];
+                    delete projectReport[CONSTANTS.common.STARTED];
+                }
+
+                if (getPdf == true) {
+                   
                     let reportTaskData = {};
                     Object.keys(tasksReport).map(taskData => {
                         reportTaskData[UTILS.camelCaseToTitleCase(taskData)] = tasksReport[taskData];
@@ -268,8 +284,9 @@ module.exports = class ReportsHelper {
                     if (entityId != "") {
                         pdfRequest['entityName'] = projectDetails[0].entityInformation.name;
                     }
+                   
 
-                    let response = await dhitiService.entityReport(userToken, pdfRequest);
+                    let response = await reportService.entityReport(userToken, pdfRequest);
                     if (response && response.success == true) {
                         return resolve({
                             success: true,
@@ -311,6 +328,7 @@ module.exports = class ReportsHelper {
     }
 
 
+
     /**
       * Get programs list.
       * @method
@@ -343,11 +361,10 @@ module.exports = class ReportsHelper {
                     query.userRole = {
                         $in : [
                             "",
-                            userRole
+                            ...userRole.split(",")
                         ]
                     }
                 }
-
 
                 let searchQuery = [];
                 if (search !== "") {
@@ -486,7 +503,7 @@ module.exports = class ReportsHelper {
                     query['programId'] = ObjectId(programId);
                 }
 
-                const projectDetails = await userProjectsHelper.projectDocument(
+                const projectDetails = await projectQueries.projectDocument(
                     query,
                     ["title",
                         "taskReport",
@@ -542,7 +559,7 @@ module.exports = class ReportsHelper {
                         "reportType": returnTypeInfo[0].label,
                         "projectDetails": projectData
                     }
-                    let response = await dhitiService.viewFullReport(userToken, data);
+                    let response = await reportService.viewFullReport(userToken, data);
 
                     if (response && response.success == true) {
 
@@ -595,9 +612,9 @@ module.exports = class ReportsHelper {
                                     }
 
                                     let color = "";
-                                    if (status == CONSTANTS.common.NOT_STARTED_STATUS) {
+                                    if (status == CONSTANTS.common.STARTED) {
                                         color = "#f5f5f5";
-                                    } else if (status == CONSTANTS.common.COMPLETED_STATUS) {
+                                    } else if (status == CONSTANTS.common.SUBMITTED_STATUS ) {
                                         color = "#20ba8d";
                                     } else if (status == CONSTANTS.common.INPROGRESS_STATUS) {
                                         color = "#ef8c2b";
@@ -635,6 +652,7 @@ module.exports = class ReportsHelper {
             }
         });
     }
+
     
 }
 

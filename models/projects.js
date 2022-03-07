@@ -28,20 +28,17 @@ module.exports = {
             default : "",
             index: true
         },
-        createdFor : {
-            type : Array,
-            default : []
-        },
         status : {
             type : String,
-            default : "notStarted",
+            default : "started",
             index: true
         },
         lastDownloadedAt : Date,
         syncedAt : Date,
         isDeleted : {
             type : Boolean,
-            default : false
+            default : false,
+            index: true
         },
         categories : {
             type : Array,
@@ -81,10 +78,6 @@ module.exports = {
         },
         startDate: Date,
         endDate: Date,
-        rootOrganisations : {
-            type : [String],
-            default : []
-        },
         learningResources : {
             type : Array,
             default : []
@@ -109,9 +102,12 @@ module.exports = {
             type : String,
             index : true
         },
-        isAPrivateProgram : Boolean,
+        isAPrivateProgram : {
+            type : Boolean,
+            index : true
+        },
         appInformation : Object,
-        userRoleInformtion : Object,
+        userRoleInformation : Object,
         hasAcceptedTAndC : {
             type : Boolean,
             default : false
@@ -120,6 +116,24 @@ module.exports = {
             type : String,
             index : true
         },
-        submissions : Object
+        submissions : Object,
+        link : {
+            type : String,
+            index : true
+        },
+        taskSequence : {
+            type : Array,
+            default : []
+        },
+        completedDate: Date,
+        recommendedFor : {
+            type : Array,
+            default : [] 
+        },
+        attachments : {
+            type : Array,
+            default : [] 
+        },
+        remarks : String
     }
 };
