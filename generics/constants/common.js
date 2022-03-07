@@ -45,6 +45,6 @@ module.exports = {
     "ATTACHMENT_TYPE_LINK" : "link",
     "PROJECT_ATTACHMENT" : "project",
     "TASK_ATTACHMENT" : "task",
-    "APPLICATION_ENV" : "loadtest",
+    "LOADTEST_APPLICATION_ENV" : "loadtest",
 
 };
