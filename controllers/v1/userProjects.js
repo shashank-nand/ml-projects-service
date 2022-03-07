@@ -8,6 +8,7 @@
 // Dependencies
 const csv = require('csvtojson');
 const userProjectsHelper = require(MODULES_BASE_PATH + "/userProjects/helper");
+const applicationEnv = process.env.APPLICATION_ENV;
 
  /**
     * UserProjects
@@ -131,7 +132,7 @@ module.exports = class UserProjects extends Abstract {
                     req.params._id,
                     req.query.lastDownloadedAt,
                     req.body,
-                    req.userDetails.userInformation.userId,
+                    (applicationEnv === CONSTANTS.common.APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userInformation.userId,
                     req.userDetails.userToken,
                     req.headers["x-app-id"]  ? 
                     req.headers["x-app-id"]  : 
@@ -264,7 +265,7 @@ module.exports = class UserProjects extends Abstract {
                 await userProjectsHelper.detailsV2(
                     req.params._id ? req.params._id : "",
                     req.query.solutionId,
-                    req.userDetails.userInformation.userId,
+                    (applicationEnv === CONSTANTS.common.APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userInformation.userId,
                     req.userDetails.userToken,
                     req.body,
                     req.headers["x-app-id"]  ? 
