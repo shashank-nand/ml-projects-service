@@ -8,6 +8,7 @@
 // Dependencies
 const csv = require('csvtojson');
 const userProjectsHelper = require(MODULES_BASE_PATH + "/userProjects/helper");
+const applicationEnv = process.env.APPLICATION_ENV;
 
  /**
     * UserProjects
@@ -131,7 +132,7 @@ module.exports = class UserProjects extends Abstract {
                     req.params._id,
                     req.query.lastDownloadedAt,
                     req.body,
-                    req.userDetails.userInformation.userId,
+                    (applicationEnv === CONSTANTS.common.LOADTEST_APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userInformation.userId, // added for load testing, the userId of the project will pass in the header to fetch the project.
                     req.userDetails.userToken,
                     req.headers["x-app-id"]  ? 
                     req.headers["x-app-id"]  : 
@@ -163,7 +164,7 @@ module.exports = class UserProjects extends Abstract {
     * @apiSampleRequest /improvement-project/api/v1/userProjects/details/5f731631e8d7cd3b88ac0659?programId=5f4e538bdf6dd17bab708173&solutionId=5f8688e7d7f86f040b77f460&templateId=IDEAIMP4
     * @apiParamExample {json} Request:
     {
-        "role" : "HM",
+        "role" : "HM,DEO",
         "state" : "236f5cff-c9af-4366-b0b6-253a1789766a",
         "district" : "1dcbc362-ec4c-4559-9081-e0c2864c2931",
         "school" : "c5726207-4f9f-4f45-91f1-3e9e8e84d824"
@@ -264,7 +265,7 @@ module.exports = class UserProjects extends Abstract {
                 await userProjectsHelper.detailsV2(
                     req.params._id ? req.params._id : "",
                     req.query.solutionId,
-                    req.userDetails.userInformation.userId,
+                    (applicationEnv === CONSTANTS.common.LOADTEST_APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userInformation.userId, // added for load testing, the userId of the project will pass in the header to fetch the project
                     req.userDetails.userToken,
                     req.body,
                     req.headers["x-app-id"]  ? 
@@ -365,7 +366,7 @@ module.exports = class UserProjects extends Abstract {
     * @apiSampleRequest /improvement-project/api/v1/userProjects/solutionDetails/5fba54dc5bf46b25a926bee5?taskId=347400e7-8a62-4dad-bc24-af7c5bd70ad1
     * @apiParamExample {json} Request:
     {
-        "role" : "HM",
+        "role" : "HM,DEO",
         "state" : "236f5cff-c9af-4366-b0b6-253a1789766a",
         "district" : "1dcbc362-ec4c-4559-9081-e0c2864c2931",
         "school" : "c5726207-4f9f-4f45-91f1-3e9e8e84d824"
@@ -492,7 +493,7 @@ module.exports = class UserProjects extends Abstract {
         "_id": "289d9558-b98f-41cf-81d3-92486f114a51"
     },
     "profileInformation" : {
-        "role" : "HM",
+        "role" : "HM,DEO",
    		"state" : "236f5cff-c9af-4366-b0b6-253a1789766a",
         "district" : "1dcbc362-ec4c-4559-9081-e0c2864c2931",
         "school" : "c5726207-4f9f-4f45-91f1-3e9e8e84d824"
@@ -644,7 +645,8 @@ module.exports = class UserProjects extends Abstract {
                 let report = await userProjectsHelper.share(
                     req.params._id,
                     taskIds,
-                    req.userDetails.userToken
+                    req.userDetails.userToken,
+                    req.headers['x-app-ver']
                 );
 
                 return resolve({

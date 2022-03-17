@@ -30,7 +30,7 @@ module.exports = {
         },
         status : {
             type : String,
-            default : "notStarted",
+            default : "started",
             index: true
         },
         lastDownloadedAt : Date,
@@ -107,7 +107,7 @@ module.exports = {
             index : true
         },
         appInformation : Object,
-        userRoleInformtion : Object,
+        userRoleInformation : Object,
         hasAcceptedTAndC : {
             type : Boolean,
             default : false
@@ -120,6 +120,20 @@ module.exports = {
         link : {
             type : String,
             index : true
-        }
+        },
+        taskSequence : {
+            type : Array,
+            default : []
+        },
+        completedDate: Date,
+        recommendedFor : {
+            type : Array,
+            default : [] 
+        },
+        attachments : {
+            type : Array,
+            default : [] 
+        },
+        remarks : String
     }
 };
