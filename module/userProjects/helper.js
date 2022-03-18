@@ -1669,12 +1669,14 @@ module.exports = class UserProjectsHelper {
 
             if ( filter && filter !== "" ) {
                 if( filter === CONSTANTS.common.CREATED_BY_ME ) {
-                    query["isAPrivateProgram"] = {
-                        $ne : false
-                    };
                     query["referenceFrom"] = {
                         $ne : CONSTANTS.common.LINK
                     };
+
+                    query["isAPrivateProgram"] = {
+                        $ne : false
+                    };
+                    
                 } else if( filter == CONSTANTS.common.ASSIGN_TO_ME ) {
                     query["isAPrivateProgram"] = false;
                 } else{
@@ -1704,30 +1706,28 @@ module.exports = class UserProjectsHelper {
             let totalCount = 0;
             let data = [];
             
-            if( projects.success && projects.data ) {
-
+            if( projects.success && projects.data && projects.data.data && Object.keys(projects.data.data).length > 0 ) {
+                
                 totalCount = projects.data.count;
                 data = projects.data.data;
 
-                if( data.length > 0 ) {
-                    data.forEach( projectData => {
-                        projectData.name = projectData.title;
+                data.forEach( projectData => {
 
-                        if (projectData.programInformation) {
-                            projectData.programName = projectData.programInformation.name;
-                            delete projectData.programInformation;
-                        }
+                    projectData.name = projectData.title;
 
-                        if (projectData.solutionExternalId) {
-                            projectData.externalId = projectData.solutionExternalId;
-                            delete projectData.solutionExternalId;
-                        }
+                    if (projectData.programInformation) {
+                        projectData.programName = projectData.programInformation.name;
+                        delete projectData.programInformation;
+                    }
 
-                        projectData.type = CONSTANTS.common.IMPROVEMENT_PROJECT;
+                    if (projectData.solutionExternalId) {
+                        projectData.externalId = projectData.solutionExternalId;
+                        delete projectData.solutionExternalId;
+                    }
 
-                        delete projectData.title;
-                    });
-                }
+                    projectData.type = CONSTANTS.common.IMPROVEMENT_PROJECT;
+                    delete projectData.title;
+                });
             }
             
             return resolve({
