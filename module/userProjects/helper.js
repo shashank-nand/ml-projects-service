@@ -361,7 +361,8 @@ module.exports = class UserProjectsHelper {
                     }
                 }
 
-                await kafkaProducersHelper.pushProjectToKafka(projectUpdated);
+                let respOfKafka = await kafkaProducersHelper.pushProjectToKafka(projectUpdated);
+                console.log(respOfKafka,"sync kafka call response")
 
                 return resolve({
                     success: true,
@@ -1993,7 +1994,8 @@ module.exports = class UserProjectsHelper {
                     _.omit(libraryProjects.data, ["_id"])
                 );
                 
-                await kafkaProducersHelper.pushProjectToKafka(projectCreation);
+                let respOfKafka = await kafkaProducersHelper.pushProjectToKafka(projectCreation);
+                console.log(respOfKafka,"importFromLibrary kafka call response")
 
                 if (requestedData.rating && requestedData.rating > 0) {
                     await projectTemplatesHelper.ratings(
