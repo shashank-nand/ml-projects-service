@@ -52,7 +52,8 @@ module.exports = {
         },
         createdBy : {
             type : String,
-            default : "SYSTEM"
+            default : "SYSTEM",
+            index: true
         },
         tasks : {
             type : Array,
