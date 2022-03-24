@@ -2014,6 +2014,7 @@ module.exports = class UserProjectsHelper {
                 });
 
             } catch (error) {
+                console.log(error,"error in controller importFromLibrary") 
                 return resolve({
                     success: false,
                     message: error.message,
