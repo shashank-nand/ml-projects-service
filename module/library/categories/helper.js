@@ -192,6 +192,8 @@ module.exports = class LibraryCategoriesHelper {
                         "isDeleted" : false,
                     }, "all", ["__v"]);
 
+                console.log(projectId, projectsData.length, "projectsData")
+
                 if( !projectsData.length > 0 ) {
                     throw {
                         status : HTTP_STATUS_CODE['bad_request'].status,
@@ -259,7 +261,7 @@ module.exports = class LibraryCategoriesHelper {
                     data : projectsData[0]
                 });
 
-            } catch (error) {   
+            } catch (error) {  
                 return resolve({
                     status : error.status ? error.status : HTTP_STATUS_CODE['internal_server_error'].status,
                     success: false,
