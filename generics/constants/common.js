@@ -44,5 +44,9 @@ module.exports = {
     "CHILDREN" : "children",
     "ATTACHMENT_TYPE_LINK" : "link",
     "PROJECT_ATTACHMENT" : "project",
-    "TASK_ATTACHMENT" : "task"
+    "TASK_ATTACHMENT" : "task",
+    "DEFAULT_TASK_COMPLETED" : 0,
+    "IMAGE_DATA_TYPE" : "image/jpeg",
+    "DISTRICT": "district",
+    "SERVER_TIME_OUT" : 5000
 };

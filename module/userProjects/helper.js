@@ -21,6 +21,8 @@ const projectTemplateTaskQueries = require(DB_QUERY_BASE_PATH + "/projectTemplat
 const kafkaProducersHelper = require(GENERICS_FILES_PATH + "/kafka/producers");
 const removeFieldsFromRequest = ["submissionDetails"];
 const programsQueries = require(DB_QUERY_BASE_PATH + "/programs");
+const userProfileService = require(GENERICS_FILES_PATH + "/services/users");
+const solutionsHelper = require(MODULES_BASE_PATH + "/solutions/helper");
 
 /**
     * UserProjectsHelper
@@ -293,11 +295,17 @@ module.exports = class UserProjectsHelper {
                     taskReport.total = updateProject.tasks.length;
 
                     updateProject.tasks.forEach(task => {
-                        if (!taskReport[task.status]) {
-                            taskReport[task.status] = 1;
+                        //consider tasks where isDeleted is false.
+                        if ( task.isDeleted == false ) {
+                            if (!taskReport[task.status]) {
+                                taskReport[task.status] = 1;
+                            } else {
+                                taskReport[task.status] += 1;
+                            }
                         } else {
-                            taskReport[task.status] += 1;
+                            taskReport.total = taskReport.total - 1;
                         }
+                        
                     });
 
                     updateProject["taskReport"] = taskReport;
@@ -337,7 +345,9 @@ module.exports = class UserProjectsHelper {
                     }
                 }
 
-                updateProject.status = UTILS.convertProjectStatus(data.status);
+                if ( data.status && data.status !== "" ) {
+                   updateProject.status = UTILS.convertProjectStatus(data.status);
+                }
                 
                 if ( data.status == CONSTANTS.common.COMPLETED_STATUS || data.status == CONSTANTS.common.SUBMITTED_STATUS ) {
                     updateProject.completedDate = new Date();
@@ -541,6 +551,7 @@ module.exports = class UserProjectsHelper {
                 if (!result.success) {
                     return resolve(result);
                 }
+
 
                 return resolve({
                     success: true,
@@ -1080,6 +1091,7 @@ module.exports = class UserProjectsHelper {
                         solutionDetails = solutionDetails.data;
 
                     } else {
+                        
                         solutionDetails =
                         await surveyService.listSolutions([solutionExternalId]);
                         if( !solutionDetails.success ) {
@@ -1147,6 +1159,8 @@ module.exports = class UserProjectsHelper {
                     if( appVersion !== "" ) {
                         projectCreation.data["appInformation"]["appVersion"] = appVersion;
                     }
+
+                    let getUserProfileFromObservation = false;
     
                     if( bodyData && Object.keys(bodyData).length > 0 ) {
     
@@ -1158,6 +1172,9 @@ module.exports = class UserProjectsHelper {
                             projectCreation.data.referenceFrom = bodyData.referenceFrom;
                             
                             if( bodyData.submissions ) {
+                                if ( bodyData.submissions.observationId && bodyData.submissions.observationId != "" ) {
+                                    getUserProfileFromObservation = true;
+                                }
                                 projectCreation.data.submissions = bodyData.submissions;
                             }
                         }
@@ -1190,9 +1207,71 @@ module.exports = class UserProjectsHelper {
     
                     projectCreation.data.status = CONSTANTS.common.STARTED;
                     projectCreation.data.lastDownloadedAt = new Date();
+                    
+                    // fetch userRoleInformation from observation if referenecFrom is observation
+                    let addReportInfoToSolution = false;
+                    if ( getUserProfileFromObservation ){
+
+                        let observationDetails = await surveyService.observationDetails(
+                            userToken,
+                            bodyData.submissions.observationId
+                        );
+
+                        if( observationDetails.data &&
+                            Object.keys(observationDetails.data).length > 0 && 
+                            observationDetails.data.userRoleInformation &&
+                            Object.keys(observationDetails.data.userRoleInformation).length > 0
+                        ) {
+
+                            userRoleInformation = observationDetails.data.userRoleInformation;
+                            
+                        }
+
+                        if( observationDetails.data &&
+                            Object.keys(observationDetails.data).length > 0 && 
+                            observationDetails.data.userProfile &&
+                            Object.keys(observationDetails.data.userProfile).length > 0
+                        ) {
+
+                            projectCreation.data.userProfile = observationDetails.data.userProfile;
+                            addReportInfoToSolution = true; 
+                            
+                        } else {
+                            //Fetch user profile information by calling sunbird's user read api.
+
+                            let userProfile = await userProfileService.profile(userToken, userId);
+                            if ( userProfile.success && 
+                                 userProfile.data &&
+                                 userProfile.data.response
+                            ) {
+                                    projectCreation.data.userProfile = userProfile.data.response;
+                                    addReportInfoToSolution = true; 
+                            } 
+                        }
+
+                    } else {
+                        //Fetch user profile information by calling sunbird's user read api.
+
+                        let userProfileData = await userProfileService.profile(userToken, userId);
+                        if ( userProfileData.success && 
+                             userProfileData.data &&
+                             userProfileData.data.response
+                        ) {
+                                projectCreation.data.userProfile = userProfileData.data.response;
+                                addReportInfoToSolution = true; 
+                        } 
+                    }
+
                     projectCreation.data.userRoleInformation = userRoleInformation;
     
                     let project = await projectQueries.createProject(projectCreation.data);
+                    
+                    if ( addReportInfoToSolution && project.solutionId ) {
+                        let updateSolution = await solutionsHelper.addReportInformationInSolution(
+                            project.solutionId,
+                            project.userProfile
+                        ); 
+                    }
 
                     await kafkaProducersHelper.pushProjectToKafka(project);
                     
@@ -1303,11 +1382,18 @@ module.exports = class UserProjectsHelper {
                         };
 
                         result.tasks.forEach(task => {
-                            if (!taskReport[task.status]) {
-                                taskReport[task.status] = 1;
+                            if ( task.isDeleted == false ) {
+
+                                if (!taskReport[task.status]) {
+                                    taskReport[task.status] = 1;
+                                } else {
+                                    taskReport[task.status] += 1;
+                                }
+
                             } else {
-                                taskReport[task.status] += 1;
+                                taskReport.total = taskReport.total - 1; 
                             }
+                            
                         });
 
                         result["taskReport"] = taskReport;
@@ -1357,6 +1443,18 @@ module.exports = class UserProjectsHelper {
 
                 createProject["userId"] = createProject["createdBy"] = createProject["updatedBy"] = userId;
 
+                //Fetch user profile information by calling sunbird's user read api.
+
+                let userProfile = await userProfileService.profile(userToken, userId);
+                if ( userProfile.success && 
+                     userProfile.data &&
+                     userProfile.data.response
+                ) {
+                    createProject.userProfile = userProfile.data.response;
+                } 
+
+                
+
                 let projectData = await _projectData(data);
                 if (projectData && projectData.success == true) {
                     createProject = _.merge(createProject, projectData.data);
@@ -1398,7 +1496,9 @@ module.exports = class UserProjectsHelper {
                     createProject =
                         _.merge(createProject, programAndSolutionInformation.data);
                 } 
-                if( data.programId && data.programId !== "" ){
+
+                if (data.programId && data.programId !== "") {
+
                     let queryData = {};
                     queryData["_id"] = data.programId;
                     let programDetails = await programsQueries.programsDocument(queryData,
@@ -1420,6 +1520,7 @@ module.exports = class UserProjectsHelper {
                     createProject =
                         _.merge(createProject, programInformationData);
                 }
+                
 
                 if (data.tasks) {
 
@@ -1432,11 +1533,17 @@ module.exports = class UserProjectsHelper {
                     taskReport.total = createProject.tasks.length;
 
                     createProject.tasks.forEach(task => {
-                        if (!taskReport[task.status]) {
-                            taskReport[task.status] = 1;
+                        if ( task.isDeleted == false ) {
+                            if (!taskReport[task.status]) {
+                                taskReport[task.status] = 1;
+                            } else {
+                                taskReport[task.status] += 1;
+                            }
                         } else {
-                            taskReport[task.status] += 1;
+                            //if task is deleted it is not counted in total.
+                            taskReport.total = taskReport.total - 1;
                         }
+                        
                     });
 
                     createProject["taskReport"] = taskReport;
@@ -1556,7 +1663,12 @@ module.exports = class UserProjectsHelper {
                             "endDate",
                             "tasks",
                             "categories",
-                            "programInformation.name"
+                            "programInformation.name",
+                            "recommendedFor",
+                            "link",
+                            "remarks",
+                            "attachments",
+                            "taskReport.completed"
                         ]
                     );
                 }
@@ -1567,7 +1679,7 @@ module.exports = class UserProjectsHelper {
                     { "$match": { _id: ObjectId(projectId), isDeleted: false} },
                     { "$project": {
                         "status": 1, "title": 1, "startDate": 1, "metaInformation.goal": 1, "metaInformation.duration":1,
-                        "categories" : 1, "programInformation.name": 1, "description" : 1,
+                        "categories" : 1, "programInformation.name": 1, "description" : 1, "recommendedFor" : 1, "link" : 1, "remarks" : 1, "attachments" : 1,  "taskReport.completed" : 1,
                         tasks: { "$filter": {
                             input: '$tasks',
                             as: 'tasks',
@@ -1589,11 +1701,75 @@ module.exports = class UserProjectsHelper {
                 projectDocument.goal = projectDocument.metaInformation ? projectDocument.metaInformation.goal : "";
                 projectDocument.duration = projectDocument.metaInformation ? projectDocument.metaInformation.duration : "";
                 projectDocument.programName = projectDocument.programInformation ? projectDocument.programInformation.name : "";
-                projectDocument.category = [];
+                projectDocument.remarks = projectDocument.remarks ? projectDocument.remarks : "";
+                projectDocument.taskcompleted = projectDocument.taskReport.completed ? projectDocument.taskReport.completed : CONSTANTS.common.DEFAULT_TASK_COMPLETED;
+                
+                //store tasks and attachment data into object
+                let projectFilter = {
+                    tasks : projectDocument.tasks,
+                    attachments : projectDocument.attachments
+                }
+                
+                //returns project tasks and attachments with downloadable urls
+                let projectDataWithUrl = await _projectInformation( projectFilter );
+
+                //replace projectDocument Data 
+                if ( projectDataWithUrl.success && 
+                     projectDataWithUrl.data && 
+                     projectDataWithUrl.data.tasks && 
+                     projectDataWithUrl.data.tasks.length > 0
+                ) {
+                    
+                    projectDocument.tasks = projectDataWithUrl.data.tasks ;
+                }
+
+                if ( projectDataWithUrl.success && 
+                     projectDataWithUrl.data && 
+                     projectDataWithUrl.data.attachments && 
+                     projectDataWithUrl.data.attachments.length > 0
+                ) {
+                   projectDocument.attachments = projectDataWithUrl.data.attachments ;
+                }
+               
+
+                //get image link and other document links
+                let imageLink = [];
+                let evidenceLink = [];
+                if ( projectDocument.attachments && projectDocument.attachments.length > 0 ) {
+                    projectDocument.attachments.forEach( attachment => {
+                        if( attachment.type == CONSTANTS.common.IMAGE_DATA_TYPE && attachment.url && attachment.url !== "" ) {
+                            imageLink.push( attachment.url );
+                        } else if ( attachment.type == CONSTANTS.common.ATTACHMENT_TYPE_LINK && attachment.name && attachment.name !== "" ) {
+                            let data = {
+                                type : attachment.type,
+                                url : attachment.name
+                            }
+                            evidenceLink.push( data );
+                        } else if ( attachment.url && attachment.url !== "" ) {
+                            let data = {
+                                type : attachment.type,
+                                url : attachment.url
+                            }
+                            evidenceLink.push( data );
+                        }
+                    })
+                }
+                projectDocument.evidenceLink = evidenceLink;       
+                projectDocument.imageLink = imageLink;
+                        
+                projectDocument.category = [];       
 
                 if (projectDocument.categories && projectDocument.categories.length > 0) {
                     projectDocument.categories.forEach( category => {
                         projectDocument.category.push(category.name);
+                    })
+                }
+
+                projectDocument.recommendedForRoles = [];
+
+                if (projectDocument.recommendedFor && projectDocument.recommendedFor.length > 0) {
+                    projectDocument.recommendedFor.forEach( recommend => {
+                        projectDocument.recommendedForRoles.push(recommend.code);
                     })
                 }
                 
@@ -1619,12 +1795,11 @@ module.exports = class UserProjectsHelper {
                 delete projectDocument.categories;
                 delete projectDocument.metaInformation;
                 delete projectDocument.programInformation;
-
+                delete projectDocument.recommendedFor;
                 
                 if (UTILS.revertStatusorNot(appVersion)) {
                     projectDocument.status = UTILS.revertProjectStatus(projectDocument.status);
                 }
-                
                 let response = await reportService.projectAndTaskReport(userToken, projectDocument, projectPdf);
 
                 if (response && response.success == true) {
@@ -1690,11 +1865,11 @@ module.exports = class UserProjectsHelper {
 
             if ( filter && filter !== "" ) {
                 if( filter === CONSTANTS.common.CREATED_BY_ME ) {
-                    query["isAPrivateProgram"] = {
-                        $ne : false
-                    };
                     query["referenceFrom"] = {
                         $ne : CONSTANTS.common.LINK
+                    };
+                    query["isAPrivateProgram"] = {
+                        $ne : false
                     };
                 } else if( filter == CONSTANTS.common.ASSIGN_TO_ME ) {
                     query["isAPrivateProgram"] = false;
@@ -1718,14 +1893,15 @@ module.exports = class UserProjectsHelper {
                     "solutionExternalId",
                     "lastDownloadedAt",
                     "hasAcceptedTAndC",
-                    "referenceFrom"
+                    "referenceFrom",
+                    "status"
                 ]
             );
 
             let totalCount = 0;
             let data = [];
             
-            if( projects.success && projects.data ) {
+            if( projects.success && projects.data && projects.data.data && Object.keys(projects.data.data).length > 0 ) {
 
                 totalCount = projects.data.count;
                 data = projects.data.data;
@@ -1733,6 +1909,7 @@ module.exports = class UserProjectsHelper {
                 if( data.length > 0 ) {
                     data.forEach( projectData => {
                         projectData.name = projectData.title;
+
 
                         if (projectData.programInformation) {
                             projectData.programName = projectData.programInformation.name;
@@ -1745,7 +1922,6 @@ module.exports = class UserProjectsHelper {
                         }
 
                         projectData.type = CONSTANTS.common.IMPROVEMENT_PROJECT;
-
                         delete projectData.title;
                     });
                 }
@@ -1897,8 +2073,9 @@ module.exports = class UserProjectsHelper {
                         message: CONSTANTS.apiResponses.PROJECT_TEMPLATE_NOT_FOUND,
                         status: HTTP_STATUS_CODE['bad_request'].status
                     };
+                    
                 }
-
+                
                 let taskReport = {};
 
                 if (
@@ -1914,11 +2091,17 @@ module.exports = class UserProjectsHelper {
                     taskReport.total = libraryProjects.data.tasks.length;
 
                     libraryProjects.data.tasks.forEach(task => {
-                        if (!taskReport[task.status]) {
-                            taskReport[task.status] = 1;
+                        if ( task.isDeleted == false ) {
+                            if (!taskReport[task.status]) {
+                                taskReport[task.status] = 1;
+                            } else {
+                                taskReport[task.status] += 1;
+                            }
                         } else {
-                            taskReport[task.status] += 1;
+                            //reduce total count if task is deleted.
+                            taskReport.total = taskReport.total - 1;
                         }
+                        
                     });
 
                     libraryProjects.data["taskReport"] = taskReport;
@@ -1994,7 +2177,17 @@ module.exports = class UserProjectsHelper {
                     )
 
                 }
-
+                //Fetch user profile information by calling sunbird's user read api.
+                let addReportInfoToSolution = false;
+                let userProfile = await userProfileService.profile(userToken, userId);
+                if ( userProfile.success && 
+                     userProfile.data &&
+                     userProfile.data.response
+                ) {
+                    libraryProjects.data.userProfile = userProfile.data.response;
+                    addReportInfoToSolution = true;
+                } 
+    
                 libraryProjects.data.userId = libraryProjects.data.updatedBy = libraryProjects.data.createdBy = userId;
                 libraryProjects.data.lastDownloadedAt = new Date();
                 libraryProjects.data.status = CONSTANTS.common.STARTED;
@@ -2013,6 +2206,14 @@ module.exports = class UserProjectsHelper {
                 let projectCreation = await database.models.projects.create(
                     _.omit(libraryProjects.data, ["_id"])
                 );
+
+                if ( addReportInfoToSolution && projectCreation._doc.solutionId ) {
+
+                    let updateSolution = await solutionsHelper.addReportInformationInSolution(
+                        projectCreation._doc.solutionId,
+                        projectCreation._doc.userProfile
+                    );
+                }
                 
                 await kafkaProducersHelper.pushProjectToKafka(projectCreation);
 
@@ -2126,7 +2327,7 @@ function _projectInformation(project) {
                         projectAttachments.push(currentProjectAttachment.sourcePath);
                     }
                 }
-
+                
                 let projectAttachmentsUrl = await _attachmentInformation(projectAttachments, projectLinkAttachments, project.attachments, CONSTANTS.common.PROJECT_ATTACHMENT);
                 if ( projectAttachmentsUrl.data && projectAttachmentsUrl.data.length > 0 ) {
                     project.attachments = projectAttachmentsUrl.data;
@@ -2195,6 +2396,7 @@ function _projectInformation(project) {
             delete project.entityInformation;
             delete project.solutionInformation;
             delete project.programInformation;
+
 
             return resolve({
                 success: true,
@@ -2288,6 +2490,7 @@ function _attachmentInformation ( attachmentWithSourcePath = [], linkAttachments
 
                 if (type === CONSTANTS.common.PROJECT_ATTACHMENT ) {
                     attachments.concat(linkAttachments);
+                    
 
                 } else {
 
@@ -2838,6 +3041,8 @@ function _projectData(data) {
         }
     })
 }
+
+
 
 
 
