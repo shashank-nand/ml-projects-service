@@ -16,6 +16,7 @@ const learningResourcesHelper = require(MODULES_BASE_PATH + "/learningResources/
 const surveyService = require(GENERICS_FILES_PATH + "/services/survey");
 const projectTemplateTaskQueries = require(DB_QUERY_BASE_PATH + "/projectTemplateTask");
 const projectTemplateQueries = require(DB_QUERY_BASE_PATH + "/projectTemplates");
+const solutionsQueries = require(DB_QUERY_BASE_PATH + "/solutions");
 
 module.exports = class ProjectTemplateTasksHelper {
 
@@ -39,11 +40,8 @@ module.exports = class ProjectTemplateTasksHelper {
                 let solutionIds = [];
                 let systemId = false;
                 let solutionExists = false;
-
                 csvData.forEach(data => {
-                    
                     let parsedData = UTILS.valueParser(data);
-
                     if( parsedData._SYSTEM_ID ) {
                         taskIds.push(parsedData._SYSTEM_ID);
                         systemId = true;
@@ -376,6 +374,30 @@ module.exports = class ProjectTemplateTasksHelper {
                             }
                         }
 
+                        //update solution project key 
+                        if ( taskData.type == CONSTANTS.common.OBSERVATION && 
+                            taskData.solutionDetails && 
+                            taskData.solutionDetails._id 
+                        ) {
+
+                            let updateSolutionObj = {
+                                "$set" : {}
+                            };
+
+                            updateSolutionObj["$set"]["referenceFrom"] = CONSTANTS.common.PROJECT;
+                            updateSolutionObj["$set"]["project"] = {
+                                _id: template._id.toString(),
+                                taskId: taskData._id.toString()
+                            };
+
+                            await solutionsQueries.updateSolutionDocument
+                            (
+                                { _id : taskData.solutionDetails._id },
+                                updateSolutionObj
+                            )
+                        }
+
+                        //update project template
                         await projectTemplateQueries.updateProjectTemplateDocument
                         (
                             { _id : template._id },
