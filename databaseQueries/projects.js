@@ -119,7 +119,6 @@ module.exports = class Projects {
             try {
               
               let projectDocument = await database.models.projects.create(projectData);
-              console.log("122",projectDocument)
               return resolve(projectDocument);
 
             } catch (error) {

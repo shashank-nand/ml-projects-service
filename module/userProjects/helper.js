@@ -1163,7 +1163,7 @@ module.exports = class UserProjectsHelper {
                     let getUserProfileFromObservation = false;
     
                     if( bodyData && Object.keys(bodyData).length > 0 ) {
-                        console.log("1166",bodyData)
+
                         if( bodyData.hasAcceptedTAndC ) {
                             projectCreation.data.hasAcceptedTAndC = bodyData.hasAcceptedTAndC;
                         }
@@ -1195,7 +1195,7 @@ module.exports = class UserProjectsHelper {
                             if( !entityInformation.success ) {
                                 return resolve(entityInformation);
                             }
-                            console.log("1198",entityInformation.data)
+
                             projectCreation.data["entityInformation"] = _entitiesMetaInformation(
                                 entityInformation.data
                             )[0];
@@ -1204,7 +1204,7 @@ module.exports = class UserProjectsHelper {
                         }
     
                     }
-                    console.log("1207",projectCreation.data)
+
                     projectCreation.data.status = CONSTANTS.common.STARTED;
                     projectCreation.data.lastDownloadedAt = new Date();
                     
@@ -1263,7 +1263,7 @@ module.exports = class UserProjectsHelper {
                     }
 
                     projectCreation.data.userRoleInformation = userRoleInformation;
-                    console.log("1266",projectCreation.data)
+
                     let project = await projectQueries.createProject(projectCreation.data);
                     
                     if ( addReportInfoToSolution && project.solutionId ) {
