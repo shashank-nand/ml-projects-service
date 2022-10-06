@@ -74,11 +74,11 @@ module.exports= class Solutions{
         try {
 
             if (Object.keys(query).length == 0) {
-                throw new Error(messageConstants.apiResponses.UPDATE_QUERY_REQUIRED)
+                throw new Error(CONSTANTS.apiResponses.UPDATE_QUERY_REQUIRED)
             }
 
             if (Object.keys(updateObject).length == 0) {
-                throw new Error (messageConstants.apiResponses.UPDATE_OBJECT_REQUIRED)
+                throw new Error (CONSTANTS.apiResponses.UPDATE_OBJECT_REQUIRED)
             }
 
             let updateResponse = await database.models.solutions.updateOne

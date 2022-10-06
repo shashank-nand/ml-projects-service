@@ -50,5 +50,6 @@ module.exports = {
     "DISTRICT": "district",
     "SERVER_TIME_OUT" : 5000,
     "OK" : "OK",
-    "PROJECT" : "project"
+    "PROJECT" : "project",
+    "LOADTEST_APPLICATION_ENV" : "loadtest"
 };
