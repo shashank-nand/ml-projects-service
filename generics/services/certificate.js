@@ -38,7 +38,7 @@ const createCertificate = function (bodyData) {
             request.post(certificateCreateUrl,options,certificateCallback);
 
             function certificateCallback(err, data) {
-                console.log("line 39 raw data from RC call :",JSON.stringify(data));
+                console.log("line 41 raw data from RC call :",JSON.stringify(data));
                 let result = {
                     success : true
                 };
@@ -89,6 +89,7 @@ const getCertificateIssuerKid = function () {
             console.log("issuer Kid bodyData : ",JSON.stringify(bodyData));
             request.post(issuerKidUrl,options,getKidCallback);
             function getKidCallback(err, data) {
+                console.log("line 92 raw data from KID call :",JSON.stringify(data));
                 let result = {
                     success : true
                 };
