@@ -74,6 +74,8 @@
                         let parentSolutionDocument = await db.collection('solutions').find({
                             _id: solutionDocument[0].parentSolutionId}).project({}).toArray({});
                      
+                        if(parentSolutionDocument.length != 1) continue;
+
                         //varibale to update project document
                         let updateProjectDocument = {
                             "$set" : {}
