@@ -41,7 +41,7 @@
 
 
         let chunkOfProjectDocument = _.chunk(projectDocument, 1000);
-        // console.log(chunkOfProjectDocument)
+
         let projectIds;
 
         for (let pointerToProject = 0; pointerToProject < chunkOfProjectDocument.length; pointerToProject++) {
@@ -82,8 +82,10 @@
                             isAPrivateProgram: false,
                         }).project({_id:1}).toArray();
 
-                        if(existingProjectDocument.length == 1) continue;
-                         
+                        if(existingProjectDocument.length == 1) {
+                            continue;
+                        }
+                     
                         //varibale to update project document
                         let updateProjectDocument = {
                             "$set" : {}
