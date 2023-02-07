@@ -40,7 +40,7 @@
         }).project({_id:1}).toArray();
 
 
-        let chunkOfProjectDocument = _.chunk(projectDocument, 1000);
+        let chunkOfProjectDocument = _.chunk(projectDocument, 100);
 
         let projectIds;
 
@@ -73,18 +73,6 @@
                         // find parent solution document in same collection
                         let parentSolutionDocument = await db.collection('solutions').find({
                             _id: solutionDocument[0].parentSolutionId}).project({}).toArray({});
-
-                        
-                        //get all projectss id where user profile is not there.
-                        let existingProjectDocument = await db.collection('projects').find({
-                            userId : projectDocuments[counter].userId,
-                            solutionId: parentSolutionDocument[0]._id,
-                            isAPrivateProgram: false,
-                        }).project({_id:1}).toArray();
-
-                        if(existingProjectDocument.length == 1) {
-                            continue;
-                        }
                      
                         //varibale to update project document
                         let updateProjectDocument = {
