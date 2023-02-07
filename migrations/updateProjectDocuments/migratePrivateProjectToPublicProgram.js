@@ -72,71 +72,73 @@
                         let parentSolutionDocument = await db.collection('solutions').find({
                             _id: solutionDocument[0].parentSolutionId}).project({}).toArray({});
                          
-                        //varibale to update project document
-                        let updateProjectDocument = {
-                            "$set" : {}
-                        };
-                        updateProjectDocument["$set"]["solutionId"] = parentSolutionDocument[0]._id
-                        updateProjectDocument["$set"]["isAPrivateProgram"] = parentSolutionDocument[0].isAPrivateProgram
-                        updateProjectDocument["$set"]["solutionInformation"] = {
-                            name: parentSolutionDocument[0].name,   
-                            description: parentSolutionDocument[0].description,
-                            externalId: parentSolutionDocument[0].externalId,
-                            _id: parentSolutionDocument[0]._id,
-                        }
-                        updateProjectDocument["$set"]["solutionExternalId"] = parentSolutionDocument[0].externalId,
-                        updateProjectDocument["$set"]["programId"] = parentSolutionDocument[0].programId,
-                        updateProjectDocument["$set"]["programExternalId"] =  parentSolutionDocument[0].programExternalId
-                        updateProjectDocument["$set"]["programInformation"] = {
-                            _id : parentSolutionDocument[0].programId,
-                            name : parentSolutionDocument[0].programName,
-                            externalId : parentSolutionDocument[0].programExternalId,
-                            description : parentSolutionDocument[0].programDescription,
-                            isAPrivateProgram : parentSolutionDocument[0].isAPrivateProgram
-                        }
-                        if(projectDocuments[counter].hasOwnProperty("userProfile"))
-                        {
-                            let userLocations = projectDocuments[counter].userProfile.userLocations
-                            let userRoleInfomration = {}
-                            //get data in userRoleInfomration key 
-                            for(let userLocationCounter = 0; userLocationCounter < userLocations.length; userLocationCounter++){
-                                if(userLocations[userLocationCounter].type !== "school"){
-                                    userRoleInfomration[userLocations[userLocationCounter].type] = userLocations[userLocationCounter].id
-                                }else{
-                                    userRoleInfomration[userLocations[userLocationCounter].type] = userLocations[userLocationCounter].code
+                        if( parentSolutionDocument.length > 0 ) {
+                            //varibale to update project document
+                            let updateProjectDocument = {
+                                "$set" : {}
+                            };
+                            updateProjectDocument["$set"]["solutionId"] = parentSolutionDocument[0]._id
+                            updateProjectDocument["$set"]["isAPrivateProgram"] = parentSolutionDocument[0].isAPrivateProgram
+                            updateProjectDocument["$set"]["solutionInformation"] = {
+                                name: parentSolutionDocument[0].name,   
+                                description: parentSolutionDocument[0].description,
+                                externalId: parentSolutionDocument[0].externalId,
+                                _id: parentSolutionDocument[0]._id,
+                            }
+                            updateProjectDocument["$set"]["solutionExternalId"] = parentSolutionDocument[0].externalId,
+                            updateProjectDocument["$set"]["programId"] = parentSolutionDocument[0].programId,
+                            updateProjectDocument["$set"]["programExternalId"] =  parentSolutionDocument[0].programExternalId
+                            updateProjectDocument["$set"]["programInformation"] = {
+                                _id : parentSolutionDocument[0].programId,
+                                name : parentSolutionDocument[0].programName,
+                                externalId : parentSolutionDocument[0].programExternalId,
+                                description : parentSolutionDocument[0].programDescription,
+                                isAPrivateProgram : parentSolutionDocument[0].isAPrivateProgram
+                            }
+                            if(projectDocuments[counter].hasOwnProperty("userProfile"))
+                            {
+                                let userLocations = projectDocuments[counter].userProfile.userLocations
+                                let userRoleInfomration = {}
+                                //get data in userRoleInfomration key 
+                                for(let userLocationCounter = 0; userLocationCounter < userLocations.length; userLocationCounter++){
+                                    if(userLocations[userLocationCounter].type !== "school"){
+                                        userRoleInfomration[userLocations[userLocationCounter].type] = userLocations[userLocationCounter].id
+                                    }else{
+                                        userRoleInfomration[userLocations[userLocationCounter].type] = userLocations[userLocationCounter].code
+                                    }
                                 }
+                                let Roles = ""
+                                for(let roleCounter = 0; roleCounter < projectDocuments[counter].userProfile.profileUserTypes.length; roleCounter++){
+                                    Roles = Roles !== "" ? Roles+"," : Roles
+                                    Roles += (projectDocuments[counter].userProfile.profileUserTypes[roleCounter].subType ? projectDocuments[counter].userProfile.profileUserTypes[roleCounter].subType.toUpperCase() : projectDocuments[counter].userProfile.profileUserTypes[roleCounter].type.toUpperCase())
+                                }
+                                userRoleInfomration.Role = Roles
+                                updateProjectDocument["$set"]["userRoleInformation"] = userRoleInfomration
                             }
-                            let Roles = ""
-                            for(let roleCounter = 0; roleCounter < projectDocuments[counter].userProfile.profileUserTypes.length; roleCounter++){
-                                Roles = Roles !== "" ? Roles+"," : Roles
-                                Roles += (projectDocuments[counter].userProfile.profileUserTypes[roleCounter].subType ? projectDocuments[counter].userProfile.profileUserTypes[roleCounter].subType.toUpperCase() : projectDocuments[counter].userProfile.profileUserTypes[roleCounter].type.toUpperCase())
-                            }
-                            userRoleInfomration.Role = Roles
-                            updateProjectDocument["$set"]["userRoleInformation"] = userRoleInfomration
-                        }
 
-                        //push all updated and deleted id in arrays and save in file
-                        updatedProjectIds.push(projectDocuments[counter]._id)
-                        deletedSolutionIds.push(projectDocuments[counter].solutionId)
-                        deletedProgramIds.push(projectDocuments[counter].programId)
+                            //push all updated and deleted id in arrays and save in file
+                            updatedProjectIds.push(projectDocuments[counter]._id)
+                            deletedSolutionIds.push(projectDocuments[counter].solutionId)
+                            deletedProgramIds.push(projectDocuments[counter].programId)
 
-                        // update project documents 
-                       
-                        await db.collection('projects').findOneAndUpdate({
-                            "_id" : projectDocuments[counter]._id
-                        },updateProjectDocument);
-
-                        await db.collection('solutions').deleteOne({
-                            _id: projectDocuments[counter].solutionId
-                        })
-                        await db.collection('programs').deleteOne({
-                            _id: projectDocuments[counter].programId
-                        })
+                            // update project documents 
                         
+                            await db.collection('projects').findOneAndUpdate({
+                                "_id" : projectDocuments[counter]._id
+                            },updateProjectDocument);
+
+                            await db.collection('solutions').deleteOne({
+                                _id: projectDocuments[counter].solutionId
+                            })
+                            await db.collection('programs').deleteOne({
+                                _id: projectDocuments[counter].programId
+                            })
+                        } 
+                                           
                     }
                 }
             }
-        
+            
 
             //write updated project ids to file
             fs.writeFile(
