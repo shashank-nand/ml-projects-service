@@ -40,7 +40,7 @@
         }).project({_id:1}).toArray();
 
 
-        let chunkOfProjectDocument = _.chunk(projectDocument, 10);
+        let chunkOfProjectDocument = _.chunk(projectDocument, 1000);
         // console.log(chunkOfProjectDocument)
         let projectIds;
 
@@ -73,6 +73,16 @@
                         // find parent solution document in same collection
                         let parentSolutionDocument = await db.collection('solutions').find({
                             _id: solutionDocument[0].parentSolutionId}).project({}).toArray({});
+
+                        
+                        //get all projectss id where user profile is not there.
+                        let existingProjectDocument = await db.collection('projects').find({
+                            userId : projectDocuments[counter].userId,
+                            solutionId: parentSolutionDocument[0]._id,
+                            isAPrivateProgram: false,
+                        }).project({_id:1}).toArray();
+
+                        if(existingProjectDocument.length == 1) continue;
                          
                         //varibale to update project document
                         let updateProjectDocument = {
@@ -123,7 +133,7 @@
                         deletedProgramIds.push(projectDocuments[counter].programId)
 
                         // update project documents
-                        try{
+                        try {
                             await db.collection('projects').findOneAndUpdate({
                                 "_id" : projectDocuments[counter]._id
                             },updateProjectDocument);
@@ -134,9 +144,7 @@
                             await db.collection('programs').deleteOne({
                                 _id: projectDocuments[counter].programId
                             })
-                            
-
-                        }catch(err){
+                        } catch(err) {
                             console.log(err)
                             skipedProjects.push(projectDocuments[counter]._id)
                             errorProject.push(JSON.stringify(err))
