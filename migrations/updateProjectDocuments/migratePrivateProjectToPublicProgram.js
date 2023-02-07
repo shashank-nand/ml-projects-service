@@ -98,7 +98,7 @@
                             description : parentSolutionDocument[0].programDescription,
                             isAPrivateProgram : parentSolutionDocument[0].isAPrivateProgram
                         }
-                        if(projectDocuments[counter].hasOwnProperty("userProfile"))
+                        if(projectDocuments[counter].hasOwnProperty("userProfile") && projectDocuments[counter].userProfile.userLocations && Array.isArray(projectDocuments[counter].userProfile.userLocations) && projectDocuments[counter].userProfile.userLocations.length > 0 && projectDocuments[counter].userProfile.profileUserTypes && Array.isArray(projectDocuments[counter].userProfile.profileUserTypes) && projectDocuments[counter].userProfile.profileUserTypes.length > 0 )
                         {
                             let userLocations = projectDocuments[counter].userProfile.userLocations
                             let userRoleInfomration = {}
