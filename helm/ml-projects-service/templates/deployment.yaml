@@ -38,7 +38,7 @@ spec:
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         ports:
-        - containerPort: {{ .Values.network.port }}
+        - containerPort: {{ .Values.port }}
         {{- if .Values.healthcheck }}
         livenessProbe:
 {{ toYaml .Values.livenessProbe | indent 10 }}
