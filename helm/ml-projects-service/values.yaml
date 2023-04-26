@@ -13,9 +13,10 @@ PROJECT_SUBMISSION_TOPIC: sunbirdstaging.ml.projects.submissions
 SUBMISSION_TOPIC: sunbirdstaging.ml.improvement.project.submission
 USER_SERVICE_URL: http://learner-service:9000
 
-image:
-  registry: docker.io
-  repository: ssksanthosh/ml_project_service
+
+dockerhub: docker.io
+repository: ssksanthosh/ml-project-service
+image_tag: release-5.2.0
 
 replicaCount: 1
 
